@@ -27,44 +27,49 @@
   (name :char :count 33)
   (label :char :count 33)) 
 
-(defcenum :gpiod-line-direction
+(defcenum gpiod-line-direction
   (gpiod-line-direction-as-is 1)
   gpiod-line-direction-input
   gpiod-line-direction-output) 
 
-(defcenum :gpiod-line-value
+(defcenum gpiod-line-value
   (gpiod-line-value-error -1)
   (gpiod-line-value-inactive 0)
   (gpiod-line-value-active 1)) 
 
-(defcenum :gpiod-line-bias
+(defcenum gpiod-line-bias
   (gpiod-line-bias-as-is 1)
   gpiod-line-bias-unknown
   gpiod-line-bias-disabled
   gpiod-line-bias-pull-up
   gpiod-line-bias-pull-down) 
 
-(defcenum :gpiod-line-edge
+(defcenum gpiod-line-edge
   (gpiod-line-edge-none 1)
   gpiod-line-edge-rising
   gpiod-line-edge-falling
   gpiod-line-edge-both) 
 
-(defcenum :gpiod-line-clock
+(defcenum gpiod-line-clock
   (gpiod-line-clock-monotonic 1)
   gpiod-line-clock-realtime
   gpiod-line-clock-hte) 
+
+(defcenum gpiod-line-drive
+  (gpiod-line-drive-push-pull 1)
+  gpiod-line-drive-open-drain
+  gpiod-line-drive-open-source)
 
 (defcstruct gpiod-line-info
   (offset :uint)
   (name :char :count 33)
   (used :bool)
   (consumer :char :count 33)
-  (direction :gpiod-line-direction)
+  (direction gpiod-line-direction)
   (active-low :bool)
-  (bias :gpiod-line-bias)
-  (edge :gpiod-line-edge)
-  (event-clock :gpiod-line-clock)
+  (bias gpiod-line-bias)
+  (edge gpiod-line-edge)
+  (event-clock gpiod-line-clock)
   (debounced :bool)
   (debounce-period-us :ulong))
 
@@ -74,6 +79,45 @@
   (num-lines :size)
   (fd :int)) 
 
+(defcstruct gpiod-line-settings
+  (direction gpiod-line-direction)
+  (edge-detection gpiod-line-edge)
+  (drive gpiod-line-drive)
+  (bias gpiod-line-bias)
+  (active-low :bool)
+  (event-clock gpiod-line-clock)
+  (debounce-period-us :long)
+  (output-value gpiod-line-value))
+
 (defcfun "gpiod_chip_open" (:pointer (:struct gpiod-chip))
-  "Open a gpio chip given a valid path."
+  "Open a chip by path.
+The GPIO chip returned must be closed with gpio-chip-close"
   (path :string)) 
+
+(defcfun "gpiod_chip_close" :void
+  "close chip and release resources"
+  (chip (:pointer (:struct gpiod-chip))))
+
+(defcfun "gpiod_chip_get_line_info" (:pointer (:struct gpiod-line-info))
+  "Get a snapshot of information about a line"
+  (chip (:pointer (:struct gpiod-chip)))
+  (offset :uint))
+
+(defcfun "gpiod_line_info_free" :void
+  (info (:pointer (:struct gpiod-line-info)))) 
+
+(defcfun "gpiod_line_info_get_direction" gpiod-line-direction
+  (info (:pointer (:struct gpiod-line-info)))) 
+
+(defcfun "gpiod_line_settings_new" (:pointer (:struct gpiod-line-settings)))
+
+(defcfun "gpiod_line_settings_set_direction" :int
+  "Set direction
+0 on success and -1 on error"
+  (settings (:pointer (:struct gpiod-line-settings)))
+  (direction gpiod-line-direction))
+
+(defcfun "gpiod_line_settings_get_direction" gpiod-line-direction
+  (settings (:pointer (:struct gpiod-line-settings))))
+
+(defmacro with-chip (path &body body) )
