@@ -75,7 +75,7 @@
 
 (defcstruct gpiod-line-request
   (chip-name (:pointer :char))
-  (offset :uint :count 64)
+  (offset :uint :count 64) ; GPIO-V2-LINES-MAX
   (num-lines :size)
   (fd :int)) 
 
@@ -89,35 +89,83 @@
   (debounce-period-us :long)
   (output-value gpiod-line-value))
 
+(defcstruct settings-node
+  (prev (:pointer (:struct settings-node)))
+  (next (:pointer (:struct settings-node)))
+  (settings (:pointer (:struct gpiod-line-settings)))
+  (refcnt :uint))
+
+(defcstruct per-line-config
+  (offset :uint)
+  (node (:pointer (:struct settings-node))))
+
+(defcstruct gpiod-line-config
+  (line-configs (:struct per-line-config) :count 64) ; LINES_MAX
+  (num-configs :size)
+  (output-values gpiod-line-value :count 64) ; LINES_MAX
+  (num-output-values :size)
+  (sref-list (:pointer (:struct settings-node))))
+
+(defcstruct gpiod-request-config
+  (consumer :char :count 32)
+  (event_buffer_size :size))
+
+
 (defcfun "gpiod_chip_open" (:pointer (:struct gpiod-chip))
   "Open a chip by path.
 The GPIO chip returned must be closed with gpio-chip-close"
   (path :string)) 
-
 (defcfun "gpiod_chip_close" :void
   "close chip and release resources"
   (chip (:pointer (:struct gpiod-chip))))
-
 (defcfun "gpiod_chip_get_line_info" (:pointer (:struct gpiod-line-info))
   "Get a snapshot of information about a line"
   (chip (:pointer (:struct gpiod-chip)))
   (offset :uint))
+(defcfun "gpiod_chip_request_lines" (:pointer (:struct gpiod-line-request))
+  (chip (:pointer (:struct gpiod-chip)))
+  (req-cfg (:pointer (:struct gpiod-request-config)))
+  (line-cfg (:pointer (:struct gpiod-line-config))))
 
 (defcfun "gpiod_line_info_free" :void
   (info (:pointer (:struct gpiod-line-info)))) 
-
 (defcfun "gpiod_line_info_get_direction" gpiod-line-direction
   (info (:pointer (:struct gpiod-line-info)))) 
 
-(defcfun "gpiod_line_settings_new" (:pointer (:struct gpiod-line-settings)))
 
+(defcfun "gpiod_line_settings_new" (:pointer (:struct gpiod-line-settings)))
+(defcfun "gpiod_line_settings_free" :void
+  (settings (:pointer (:struct gpiod-line-settings))))
 (defcfun "gpiod_line_settings_set_direction" :int
   "Set direction
 0 on success and -1 on error"
   (settings (:pointer (:struct gpiod-line-settings)))
   (direction gpiod-line-direction))
-
 (defcfun "gpiod_line_settings_get_direction" gpiod-line-direction
   (settings (:pointer (:struct gpiod-line-settings))))
+(defcfun "gpiod_line_settings_set_output_value" :int
+  (settings (:pointer (:struct gpiod-line-settings)))
+  (value gpiod-line-value))
+
+(defcfun "gpiod_line_config_new" (:pointer (:struct gpiod-line-config)))
+(defcfun "gpiod_line_config_free" :void
+  (config (:pointer (:struct gpiod-line-config))))
+(defcfun "gpiod_line_config_add_line_settings" :int
+  (config (:pointer (:struct gpiod-line-config)))
+  (offsets (:pointer :uint))
+  (num_offsets :size)
+  (settings (:pointer (:struct gpiod-line-settings))))
+
+(defcfun "gpiod_line_request_release" :void
+  (request (:pointer (:struct gpiod-line-request))))
+
+(defcfun "gpiod_request_config_new" (:pointer (:struct gpiod-request-config)))
+(defcfun "gpiod_request_config_free" :void
+  (config (:pointer (:struct gpiod-request-config))))
+(defcfun "gpiod_request_config_set_consumer" :void
+  (config (:pointer (:struct gpiod-request-config)))
+  (consumer :string))
+(defcfun "gpiod_request_config_set_consumer" :string
+  (config (:pointer (:struct gpiod-request-config))))
 
 (defmacro with-chip (path &body body) )
