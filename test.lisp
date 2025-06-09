@@ -1,9 +1,9 @@
-(load "~/dunderscore/workspaces/git-repos/cl-gpio/main.lisp")
+;(load "~/dunderscore/workspaces/git-repos/cl-gpio/main.lisp")
 (in-package :cl-gpio) 
 
-(let ((chip gpiod-chip-open "/dev/gpiochip0")
-      (settings gpiod-line-settings-new)
-      (line-cfg gpiod-line-config-new)
+(let ((chip (gpiod-chip-open "/dev/gpiochip0"))
+      (settings (gpiod-line-settings-new))
+      (line-cfg (gpiod-line-config-new))
       (offset (cffi:foreign-alloc :uint))
       (request ()))
   (gpiod-line-settings-set-direction settings gpiod-line-direction-output)
