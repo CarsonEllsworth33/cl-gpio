@@ -13,6 +13,7 @@
   (setf request (gpiod-chip-request-lines chip (cffi:null-pointer) line-cfg))
   (gpiod-line-request-set-value request 24 gpiod-line-value-active)
   (sleep 3)
+  (gpiod-line-request-set-value request 24 gpiod-line-value-inactive)
   (gpiod-chip-close chip)
   (cffi:foreign-free offset)
   (gpiod-line-settings-free settings)
