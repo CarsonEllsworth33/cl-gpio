@@ -24,8 +24,8 @@
 
 (defcstruct gpiod-chip-info
   (num-lines :size)
-  (name :char :count 33)
-  (label :char :count 33)) 
+  (name :char :count #.(1+ GPIO-V2-LINE-MAX))
+  (label :char :count #.(1+ GPIO-V2-LINE-MAX))) 
 
 (defcenum gpiod-line-direction
   (gpiod-line-direction-as-is 1)
@@ -62,9 +62,9 @@
 
 (defcstruct gpiod-line-info
   (offset :uint)
-  (name :char :count 33)
+  (name :char :count #.(1+ GPIO-V2-LINE-MAX))
   (used :bool)
-  (consumer :char :count 33)
+  (consumer :char :count #.(1+ GPIO-V2-LINE-MAX))
   (direction gpiod-line-direction)
   (active-low :bool)
   (bias gpiod-line-bias)
@@ -75,7 +75,7 @@
 
 (defcstruct gpiod-line-request
   (chip-name (:pointer :char))
-  (offset :uint :count 64) ; GPIO-V2-LINES-MAX
+  (offset :uint :count #.GPIO-V2-LINE-MAX) ; GPIO-V2-LINES-MAX
   (num-lines :size)
   (fd :int)) 
 
@@ -100,14 +100,14 @@
   (node (:pointer (:struct settings-node))))
 
 (defcstruct gpiod-line-config
-  (line-configs (:struct per-line-config) :count 64) ; LINES_MAX
+  (line-configs (:struct per-line-config) :count #.GPIO-V2-LINE-MAX)
   (num-configs :size)
-  (output-values gpiod-line-value :count 64) ; LINES_MAX
+  (output-values gpiod-line-value :count #.GPIO-V2-LINE-MAX)
   (num-output-values :size)
   (sref-list (:pointer (:struct settings-node))))
 
 (defcstruct gpiod-request-config
-  (consumer :char :count 32)
+  (consumer :char :count #.GPIO-MAX-NAME-SIZE)
   (event_buffer_size :size))
 
 
@@ -158,6 +158,10 @@ The GPIO chip returned must be closed with gpio-chip-close"
 
 (defcfun "gpiod_line_request_release" :void
   (request (:pointer (:struct gpiod-line-request))))
+(defcfun "gpiod_line_request_set_value" :int
+  (request (:pointer (:struct gpiod-line-request)))
+  (offset :uint)
+  (value gpiod-line-value))
 
 (defcfun "gpiod_request_config_new" (:pointer (:struct gpiod-request-config)))
 (defcfun "gpiod_request_config_free" :void
