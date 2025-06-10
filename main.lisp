@@ -172,4 +172,25 @@ The GPIO chip returned must be closed with gpio-chip-close"
 (defcfun "gpiod_request_config_set_consumer" :string
   (config (:pointer (:struct gpiod-request-config))))
 
-(defmacro with-chip (path &body body) )
+(defmacro with-pins (pins &key (path "/dev/gpiochip0") (direction :output) (output-value :active) &body body)
+  (if (string= (symbol-name direction) "OUTPUT")
+      (setf direction gpiod-line-direction-output)
+      (setf direction gpiod-line-direction-input))
+  (if (string= (symbol-name output-value) "ACTIVE")
+      (setf output-value gpiod-line-value-active)
+      (setf output-value gpiod-line-value-inactive))
+  `(progn
+     (let ((chip (gpiod-chip-open ,path))
+           (settings (gpiod-line-settings-new))
+           (line-cfg (gpiod-line-config-new))
+           (offset (cffi:foreign-alloc :uint :count (length ,pins) :initial-contents ,pins))
+           (request ()))
+       (gpiod-line-settings-set-direction ,settings ,direction)
+       (gpiod-line-settings-set-output-value ,settings ,output-value)
+       (gpiod-line-config-add-line-settings ,line-cfg ,offset (length ,offset) ,settings)
+       (setf request (gpiod-chip-request-lines ,chip (cffi:null-pointer) ,line-cfg)))))
+
+
+
+
+
