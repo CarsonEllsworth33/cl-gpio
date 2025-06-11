@@ -180,11 +180,11 @@ The GPIO chip returned must be closed with gpio-chip-close"
      (let ((chip (gpiod-chip-open ,path))
            (settings (gpiod-line-settings-new))
            (line-cfg (gpiod-line-config-new))
-           (offset (cffi:foreign-alloc :uint :count (length ,pins) :initial-contents ,pins))
+           (offset (cffi:foreign-alloc :uint :initial-contents ',pins))
            (request ()))
        (gpiod-line-settings-set-direction settings ,direction)
        (gpiod-line-settings-set-output-value settings gpiod-line-value-inactive)
-       (gpiod-line-config-add-line-settings line-cfg offset (length offset) settings)
+       (gpiod-line-config-add-line-settings line-cfg offset (length ',pins) settings)
        (setf request (gpiod-chip-request-lines chip (cffi:null-pointer) line-cfg))
        ,@body
        (gpiod-chip-close chip)

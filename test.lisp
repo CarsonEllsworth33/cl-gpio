@@ -1,7 +1,7 @@
 ;(load "~/dunderscore/workspaces/git-repos/cl-gpio/main.lisp")
 (in-package :cl-gpio) 
 
-(with-pins '(5 26) nil
+(with-pins (5 26) nil
   (set-pin 26 :high)
   (sleep 3)
   (set-pin 26 :low)
