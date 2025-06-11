@@ -172,7 +172,8 @@ The GPIO chip returned must be closed with gpio-chip-close"
 (defcfun "gpiod_request_config_set_consumer" :string
   (config (:pointer (:struct gpiod-request-config))))
 
-(defmacro with-pins (pins &key (path "/dev/gpiochip0") (direction :output) (output-value :active) &body body)
+(defmacro with-pins (pins (&key (path "/dev/gpiochip0") (direction :output) 
+                                (output-value :active)) &body body)
   (if (string= (symbol-name direction) "OUTPUT")
       (setf direction gpiod-line-direction-output)
       (setf direction gpiod-line-direction-input))
@@ -184,13 +185,41 @@ The GPIO chip returned must be closed with gpio-chip-close"
            (settings (gpiod-line-settings-new))
            (line-cfg (gpiod-line-config-new))
            (offset (cffi:foreign-alloc :uint :count (length ,pins) :initial-contents ,pins))
+           (:active gpiod-line-value-active)
+           (:inactive gpiod-line-value-inactive)
            (request ()))
-       (gpiod-line-settings-set-direction ,settings ,direction)
-       (gpiod-line-settings-set-output-value ,settings ,output-value)
-       (gpiod-line-config-add-line-settings ,line-cfg ,offset (length ,offset) ,settings)
-       (setf request (gpiod-chip-request-lines ,chip (cffi:null-pointer) ,line-cfg)))))
+       (gpiod-line-settings-set-direction settings ,direction)
+       (gpiod-line-settings-set-output-value settings ,output-value)
+       (gpiod-line-config-add-line-settings line-cfg offset (length offset) settings)
+       (setf request (gpiod-chip-request-lines chip (cffi:null-pointer) line-cfg))
+       ,@body
+       (gpiod-chip-close chip)
+       (cffi:foreign-free offset)
+       (gpiod-line-settings-free settings)
+       (gpiod-line-config-free line-cfg))))
 
+(defmacro set-pin (pin output-value)
+  "Set a specific PIN High or Low.
+This is meant to be used within the WITH-PINS macro and only one PIN is to be set from the list of specified pins in WITH-PINS per call to SET-PIN.
+Valid OUTPUT-VALUE values are 
+:high :active for logic high
+:low :inactive for logic low"
+  (cond ((or (string= (symbol-name output-value) "ACTIVE")
+              (string= (symbol-name output-value) "HIGH"))
+         (setf output-value 'gpiod-line-value-active))
+        ((or (string= (symbol-name output-value) "INACTIVE")
+             (string= (symbol-name output-value) "LOW"))
+         (setf output-value 'gpiod-line-value-inactive))
+        (t (setf output-value 'gpiod-line-value-inactive)))
+  `(gpiod-line-request-set-value request ,pin ,output-value))
 
-
+(with-pins '(5 26) nil
+  (set-pin 26 :high)
+  (sleep 3)
+  (set-pin 26 :low)
+  (sleep 7)
+  (set-pin 5 :active)
+  (sleep 3)
+  (set-pin 5 :inactive))
 
 
