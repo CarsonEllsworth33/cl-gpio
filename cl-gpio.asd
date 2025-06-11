@@ -1,6 +1,7 @@
 (defsystem "cl-gpio"
-  :version "0.0.1"
+  :version "0.1.0"
   :depends-on ("cffi")
   :pathname "src"
-  :components ((:file "main")
+  :components ((:file "package")
+               (:file "main")
                (:file "structs")))
