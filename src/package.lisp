@@ -2,4 +2,6 @@
   (:use :cl :cffi)
   (:export 
    #:with-pins
-   #:set-pin))
+   #:set-pin
+   #:read-pin
+   #:*chip-path*))

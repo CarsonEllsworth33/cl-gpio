@@ -152,6 +152,9 @@ The GPIO chip returned must be closed with gpio-chip-close"
   (request (:pointer (:struct gpiod-line-request)))
   (offset :uint)
   (value gpiod-line-value))
+(defcfun "gpiod_line_request_get_value" gpiod-line-value
+  (request (:pointer (:struct gpiod-line-request)))
+  (offset :uint))
 
 (defcfun "gpiod_request_config_new" (:pointer (:struct gpiod-request-config)))
 (defcfun "gpiod_request_config_free" :void
